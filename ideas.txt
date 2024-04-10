@@ -6,3 +6,9 @@
     - number of notes in melody
     - time between notes
 - autoplay mode, generate melodies with time inbetween them
+- show notes in centered boxes
+    - first note shown immediately, others "?"
+    - color notes as being played
+    - let users click squares to hear that note
+- make virtual keyboard for input as well?
+- show notes in a staff?
