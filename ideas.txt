@@ -1,0 +1,8 @@
+- detect midi keyboard input!
+- make GUI piano and show answer there too?
+- make controls for:
+    - range of notes
+    - max jump size (in semitones)
+    - number of notes in melody
+    - time between notes
+- autoplay mode, generate melodies with time inbetween them

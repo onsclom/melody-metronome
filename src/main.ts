@@ -1,17 +1,29 @@
 const audioContext = new AudioContext();
 
-const button = document.createElement("button");
-button.textContent = "Play random melody";
-document.body.appendChild(button);
-
 function playFrequency(freq: number, duration: number) {
   const oscillator = audioContext.createOscillator();
   oscillator.frequency.value = freq;
   oscillator.type = "triangle";
-  oscillator.connect(audioContext.destination);
+
+  // make pluck noise
+  const gainNode = audioContext.createGain();
+  gainNode.gain.setValueAtTime(duration, audioContext.currentTime);
+  gainNode.gain.linearRampToValueAtTime(
+    0.01,
+    audioContext.currentTime + duration,
+  );
+
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
   oscillator.start();
   oscillator.stop(audioContext.currentTime + duration);
-  setTimeout(() => oscillator.disconnect(), duration * 1000);
+
+  // do i actually need to disconnect things? idk
+  // i'm afraid it might cause memory leaks
+  setTimeout(() => {
+    oscillator.disconnect();
+    gainNode.disconnect();
+  }, duration * 1000);
 }
 
 function noteToFreq(note: number) {
@@ -20,7 +32,7 @@ function noteToFreq(note: number) {
 
 function noteName(note: number) {
   // prettier-ignore
-  const notes = [ "C", "C#/Db", "D", "D#/Eb", "E", "F", "F#/Gb", "G", "G#/Ab", "A", "A#/Bb", "B", ];
+  const notes = [ "C", "C#/Db", "D", "D#/Eb", "E", "F", "F#/Gb", "G", "G#/Ab", "A", "A#/Bb", "B" ];
   return `${notes[note % 12]}${Math.floor(note / 12) - 1}`;
 }
 
@@ -35,20 +47,60 @@ const start = 60 - 12;
 const notes = Array.from({ length: 24 }, (_, i) => note(i + start));
 
 function randomMelody(len: number) {
-  const melody = Array.from({ length: len }, () => {
-    return notes[Math.floor(Math.random() * notes.length)];
-  });
+  const maxJump = 14; // M9 jump
+  const melody = [] as { name: string; freq: number }[];
+  melody.push(notes[Math.floor(Math.random() * notes.length)]);
+  while (melody.length < len) {
+    const lastNote = melody[melody.length - 1];
+    const randomNote = notes[Math.floor(Math.random() * notes.length)];
+    const distance = Math.abs(
+      notes.indexOf(lastNote) - notes.indexOf(randomNote),
+    );
+    if (distance <= maxJump) {
+      melody.push(randomNote);
+    }
+  }
   return melody;
 }
 
-button.addEventListener("click", () => {
-  const melody = randomMelody(5);
-  console.log(
-    melody.map((note) => `${note.name} (${note.freq.toFixed(2)} Hz)`),
-  );
-  melody.forEach((note, i) => {
+const state = {
+  melody: randomMelody(5),
+  curNote: 0,
+  timePerNote: 500,
+};
+
+// UI
+///////////////////////////////
+
+const melodyGenerateButton = document.createElement("button");
+melodyGenerateButton.textContent = "Play random melody";
+document.body.appendChild(melodyGenerateButton);
+
+const replayButton = document.createElement("button");
+replayButton.textContent = "Replay melody";
+document.body.appendChild(replayButton);
+
+const curText = document.createElement("p");
+document.body.appendChild(curText);
+
+melodyGenerateButton.addEventListener("click", () => {
+  state.melody = randomMelody(5);
+  state.melody.forEach((note, i) => {
     setTimeout(() => {
-      playFrequency(note.freq, 0.5);
-    }, i * 500);
+      playFrequency(note.freq, state.timePerNote / 1000);
+    }, i * state.timePerNote);
+  });
+
+  curText.textContent = `Starts on: ${state.melody[0].name}`;
+  setTimeout(() => {
+    curText.textContent = state.melody.map((note) => note.name).join(", ");
+  }, state.timePerNote * state.melody.length);
+});
+
+replayButton.addEventListener("click", () => {
+  state.melody.forEach((note, i) => {
+    setTimeout(() => {
+      playFrequency(note.freq, state.timePerNote / 1000);
+    }, i * state.timePerNote);
   });
 });

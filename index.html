@@ -4,9 +4,52 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>trainear</title>
+        <style>
+            /* prettier-ignore */
+            button, body {
+                font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto, arial, sans-serif;
+            }
+
+            /* https://www.joshwcomeau.com/css/custom-css-reset/ */
+            /* ------------------------------------------------- */
+
+            /* prettier-ignore */
+            *, *::before, *::after {
+                box-sizing: border-box;
+            }
+
+            * {
+                margin: 0;
+            }
+
+            body {
+                line-height: 1.5;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            /* prettier-ignore */
+            img, picture, video, canvas, svg {
+                display: block;
+                max-width: 100%;
+            }
+
+            /* prettier-ignore */
+            input, button, textarea, select {
+                font: inherit;
+            }
+
+            /* prettier-ignore */
+            p, h1, h2, h3, h4, h5, h6 {
+                overflow-wrap: break-word;
+            }
+
+            /* prettier-ignore */
+            #root, #__next {
+                isolation: isolate;
+            }
+        </style>
     </head>
     <body>
-        <div id="app"></div>
         <script type="module" src="/src/main.ts"></script>
     </body>
 </html>
