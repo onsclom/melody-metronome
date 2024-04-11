@@ -1,11 +1,10 @@
 const audioContext = new AudioContext();
 
-function playFrequency(freq: number, duration: number) {
+function playNote(freq: number, duration: number) {
   const oscillator = audioContext.createOscillator();
   oscillator.frequency.value = freq;
   oscillator.type = "triangle";
 
-  // make pluck noise
   const gainNode = audioContext.createGain();
   gainNode.gain.setValueAtTime(duration, audioContext.currentTime);
   gainNode.gain.linearRampToValueAtTime(
@@ -63,44 +62,84 @@ function randomMelody(len: number) {
   return melody;
 }
 
+// STATE
+///////////////////////////////
+
 const state = {
   melody: randomMelody(5),
   curNote: 0,
   timePerNote: 500,
 };
 
+function el<K extends keyof HTMLElementTagNameMap>(
+  type: K,
+  // pretty crazy typing huh? but it works!
+  props: Partial<
+    Omit<HTMLElementTagNameMap[K], "style"> & {
+      style: Partial<CSSStyleDeclaration>;
+    }
+  > = {},
+  ...children: (HTMLElement | string)[]
+) {
+  const el = document.createElement(type);
+  Object.assign(el, props);
+  if (props.style) {
+    for (const [key, value] of Object.entries(props.style)) {
+      el.style[key as any] = value;
+    }
+  }
+  children.forEach((child) => {
+    if (typeof child === "string") {
+      el.appendChild(document.createTextNode(child));
+    } else {
+      el.appendChild(child);
+    }
+  });
+  return el;
+}
+
 // UI
 ///////////////////////////////
 
-const melodyGenerateButton = document.createElement("button");
-melodyGenerateButton.textContent = "Play random melody";
-document.body.appendChild(melodyGenerateButton);
+{
+  const melodyGenerateButton = el("button", {}, "Play random melody");
+  document.body.appendChild(melodyGenerateButton);
 
-const replayButton = document.createElement("button");
-replayButton.textContent = "Replay melody";
-document.body.appendChild(replayButton);
+  melodyGenerateButton.addEventListener("click", () => {
+    state.melody = randomMelody(5);
+    state.melody.forEach((note, i) => {
+      setTimeout(() => {
+        playNote(note.freq, state.timePerNote / 1000);
+      }, i * state.timePerNote);
+    });
 
-const curText = document.createElement("p");
-document.body.appendChild(curText);
+    noteContainer.innerHTML = "";
+    state.melody.forEach((note) => {
+      const noteButton = el(
+        "button",
+        {
+          style: {
+            width: "5rem",
+            height: "5rem",
+          },
+          onclick: () => {
+            playNote(note.freq, state.timePerNote / 1000);
+          },
+        },
+        "?",
+      );
+      noteContainer.appendChild(noteButton);
+    });
 
-melodyGenerateButton.addEventListener("click", () => {
-  state.melody = randomMelody(5);
-  state.melody.forEach((note, i) => {
+    noteContainer.childNodes[0].textContent = state.melody[0].name;
     setTimeout(() => {
-      playFrequency(note.freq, state.timePerNote / 1000);
-    }, i * state.timePerNote);
+      noteContainer.childNodes.forEach((child, i) => {
+        if (child instanceof HTMLButtonElement === false) return;
+        child.textContent = state.melody[i].name;
+      });
+    }, state.timePerNote * state.melody.length);
   });
+}
 
-  curText.textContent = `Starts on: ${state.melody[0].name}`;
-  setTimeout(() => {
-    curText.textContent = state.melody.map((note) => note.name).join(", ");
-  }, state.timePerNote * state.melody.length);
-});
-
-replayButton.addEventListener("click", () => {
-  state.melody.forEach((note, i) => {
-    setTimeout(() => {
-      playFrequency(note.freq, state.timePerNote / 1000);
-    }, i * state.timePerNote);
-  });
-});
+const noteContainer = el("div", {});
+document.body.appendChild(noteContainer);
