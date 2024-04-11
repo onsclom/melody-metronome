@@ -1,3 +1,5 @@
+features:
+
 - detect midi keyboard input!
 - make GUI piano and show answer there too?
 - make controls for:
@@ -12,3 +14,28 @@
     - let users click squares to hear that note
 - make virtual keyboard for input as well?
 - show notes in a staff?
+
+technical:
+
+- i should probably adopt a pattern like https://github.com/nanostores/nanostores:
+```ts
+function createStore<T>(initialState: T): Store<T> {
+  let listeners = new Set<Listener<T>>()
+  let state = initialState
+  return {
+    get() {
+      return state
+    },
+    set(newState: T) {
+      state = newState
+      listeners.forEach(listener => listener(state))
+    },
+    subscribe(listener) {
+      listeners.add(listener)
+      return () => {
+        listeners.delete(listener)
+      }
+    }
+  }
+}
+```
