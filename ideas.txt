@@ -39,3 +39,12 @@ function createStore<T>(initialState: T): Store<T> {
   }
 }
 ```
+
+^ old notes above, now i changed the app entirely
+
+features:
+- preset buttons for "novice", "intermediate", "advanced"
+- make speed in BPM
+- show visualization of tempo
+- control range of notes
+- explore other sounds?
