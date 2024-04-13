@@ -52,5 +52,6 @@ export function noteFromNum(note: number) {
   return {
     name: noteName(note),
     freq: noteToFreq(note),
+    num: note,
   };
 }

@@ -27,6 +27,7 @@ features:
 - intervals (list allowed intervals!) .. maybe checkboxes and +/-
   - imagine someone wants to practice M3rds on their instrument... they could set intervals to [1, 4] to allow M3rds (and semitones to break up cycles)
 - make mode without interval that waits for you to play note on MIDI keyboard!
+- give melodies in bursts! (like 4 notes at a time)
 
 show off:
 
