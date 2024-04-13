@@ -15,10 +15,17 @@ const noteCleanup = createStore(null as null | (() => void));
 
 const notesPerMinSlider = el(
   "label",
-  { style: { display: "flex", gap: ".5rem" } },
-  "Notes per minute:",
+  {
+    style: {
+      display: "flex",
+      gap: ".5rem",
+      alignContent: "center",
+      justifyContent: "center",
+    },
+  },
   el("input", {
     type: "range",
+    style: { flexGrow: "1" },
     oninput: (e) => {
       notesPerMinute.set(Number((e.target as HTMLInputElement).value));
     },
@@ -32,6 +39,10 @@ const notesPerMinSlider = el(
       notesPerMinute.subscribe((newVal) => {
         el.textContent = String(newVal);
       });
+    },
+    style: {
+      width: "2rem",
+      textAlign: "center",
     },
   }),
 );
@@ -57,13 +68,10 @@ document.body.appendChild(
         },
       },
       el("legend", {}, "Settings"),
+      "Notes per minute",
       notesPerMinSlider,
-      el(
-        "span",
-        { style: { display: "flex", gap: ".5rem" } },
-        "Max interval (in semitones): ",
-        Counter(maxInterval, 1, 20),
-      ),
+      "Max interval (in semitones)",
+      Counter(maxInterval, 1, 20),
     ),
     el(
       "button",
