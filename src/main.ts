@@ -47,10 +47,15 @@ document.body.appendChild(
       },
     },
     el("h1", {}, "Melody Metronome"),
-
     el(
       "fieldset",
-      {},
+      {
+        onMount: (el) => {
+          noteCleanup.subscribe((cleanup) => {
+            el.disabled = cleanup !== null;
+          });
+        },
+      },
       el("legend", {}, "Settings"),
       notesPerMinSlider,
       el(
