@@ -79,7 +79,11 @@ document.body.appendChild(
       },
       "start",
     ),
-    el("small", { style: { display: "block" } }, "first note is always c4"),
+    el(
+      "small",
+      { style: { display: "block" } },
+      "First note is always c4. Notes stay between c3 and c5.",
+    ),
   ),
 );
 
