@@ -1,106 +1,130 @@
 import el from "./el.ts";
 import Counter from "./counter.ts";
 import { noteFromNum, playFreq } from "./music.ts";
+import { createStore } from "./store.ts";
 
-const state = {
-  curNote: 0,
-  notesPerMinute: 45,
-  noteAmount: 5,
-  maxInterval: 7,
-  melodyTimeouts: [] as number[],
-  // if null, we are playing
-  noteCleanup: null as null | (() => void),
-};
+// STATE
+///////////////
 
-const startStopButton = el(
-  "button",
-  {
-    style: { padding: "1rem" },
-    onclick: () => {
-      const minNote = 60 - 12;
-      const possibleNotes = Array.from({ length: 24 }, (_, i) =>
-        noteFromNum(i + minNote),
-      );
-      if (state.noteCleanup === null) {
-        // first note should be C4
-        let lastNoteIndex = 12;
-        const note = possibleNotes[lastNoteIndex];
+const notesPerMinute = createStore(45);
+const maxInterval = createStore(7);
+const noteCleanup = createStore(null as null | (() => void));
 
-        function scheduleNextNote() {
-          return setTimeout(
-            () => {
-              let newNoteIndex = Math.floor(
-                Math.random() * possibleNotes.length,
-              );
-              while (
-                Math.abs(newNoteIndex - lastNoteIndex) > state.maxInterval ||
-                newNoteIndex === lastNoteIndex
-              ) {
-                newNoteIndex = Math.floor(Math.random() * possibleNotes.length);
-              }
-              lastNoteIndex = newNoteIndex;
-              const note = possibleNotes[newNoteIndex];
-              const cancelNote = playFreq(note.freq);
-              const noteTimeout = scheduleNextNote();
-              state.noteCleanup = () => {
-                clearTimeout(noteTimeout);
-                cancelNote();
-              };
-            },
-            (1000 * 60) / state.notesPerMinute,
-          );
-        }
-        const cancelNote = playFreq(note.freq);
-        const noteTimeout = scheduleNextNote();
-        state.noteCleanup = () => {
-          cancelNote();
-          clearTimeout(noteTimeout);
-        };
-      } else {
-        state.noteCleanup();
-        state.noteCleanup = null;
-      }
+// UI
+///////////////
 
-      startStopButton.textContent =
-        state.noteCleanup === null ? "start" : "stop";
+const notesPerMinSlider = el(
+  "label",
+  { style: { display: "flex", gap: ".5rem" } },
+  "Notes per minute:",
+  el("input", {
+    type: "range",
+    oninput: (e) => {
+      notesPerMinute.set(Number((e.target as HTMLInputElement).value));
     },
-  },
-  "start",
+    min: "15",
+    max: "180",
+    step: "1",
+    value: notesPerMinute.get().toString(),
+  }),
+  el("span", {
+    onMount: (el) => {
+      notesPerMinute.subscribe((newVal) => {
+        el.textContent = String(newVal);
+      });
+    },
+  }),
 );
-const notesPerMinSpan = el("span", {}, String(state.notesPerMinute));
+
 document.body.appendChild(
   el(
-    "div",
-    {},
+    "main",
+    {
+      style: {
+        maxWidth: "30rem",
+        margin: "auto",
+        padding: "1rem",
+      },
+    },
+    el("h1", {}, "Melody Metronome"),
+
     el(
-      "label",
-      { style: { display: "flex", gap: ".5rem" } },
-      "Notes per minute: ",
-      el("input", {
-        type: "range",
-        oninput: (e) => {
-          state.notesPerMinute = Number((e.target as HTMLInputElement).value);
-          notesPerMinSpan.textContent = String(state.notesPerMinute);
-        },
-        min: "15",
-        max: "180",
-        step: "1",
-        value: String(state.notesPerMinute),
-      }),
-      notesPerMinSpan,
-    ),
-    el(
-      "label",
-      { style: { display: "flex", gap: ".5rem" } },
-      "Max interval (in semitones): ",
-      Counter(
-        state.maxInterval,
-        (newVal) => (state.maxInterval = newVal),
-        1,
-        20,
+      "fieldset",
+      {},
+      el("legend", {}, "Settings"),
+      notesPerMinSlider,
+      el(
+        "span",
+        { style: { display: "flex", gap: ".5rem" } },
+        "Max interval (in semitones): ",
+        Counter(maxInterval, 1, 20),
       ),
     ),
-    startStopButton,
+    el(
+      "button",
+      {
+        style: {
+          padding: "1rem",
+          width: "100%",
+          marginTop: "1rem",
+          cursor: "pointer",
+        },
+        onclick: onStartStop,
+        onMount: (el) => {
+          noteCleanup.subscribe((cleanup) => {
+            el.textContent = cleanup === null ? "Start" : "Stop";
+            el.style.backgroundColor = cleanup === null ? "#cfc" : "#fcc";
+          });
+        },
+      },
+      "start",
+    ),
     el("small", { style: { display: "block" } }, "first note is always c4"),
   ),
 );
+
+function onStartStop() {
+  const minNote = 60 - 12;
+  const possibleNotes = Array.from({ length: 24 }, (_, i) =>
+    noteFromNum(i + minNote),
+  );
+  const curNoteCleanup = noteCleanup.get();
+
+  if (curNoteCleanup === null) {
+    // first note should be C4
+    let lastNoteIndex = 12;
+    const note = possibleNotes[lastNoteIndex];
+
+    function scheduleNextNote() {
+      return setTimeout(
+        () => {
+          let newNoteIndex = Math.floor(Math.random() * possibleNotes.length);
+          while (
+            Math.abs(newNoteIndex - lastNoteIndex) > maxInterval.get() ||
+            newNoteIndex === lastNoteIndex
+          ) {
+            newNoteIndex = Math.floor(Math.random() * possibleNotes.length);
+          }
+          lastNoteIndex = newNoteIndex;
+          const note = possibleNotes[newNoteIndex];
+          const cancelNote = playFreq(note.freq);
+          const noteTimeout = scheduleNextNote();
+          noteCleanup.set(() => {
+            clearTimeout(noteTimeout);
+            cancelNote();
+          });
+        },
+        (1000 * 60) / notesPerMinute.get(),
+      );
+    }
+    const cancelNote = playFreq(note.freq);
+    const noteTimeout = scheduleNextNote();
+    noteCleanup.set(() => {
+      cancelNote();
+      clearTimeout(noteTimeout);
+    });
+  } else {
+    curNoteCleanup();
+    noteCleanup.set(null);
+  }
+}

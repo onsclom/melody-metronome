@@ -4,6 +4,7 @@ export default function el<K extends keyof HTMLElementTagNameMap>(
   props: Partial<
     Omit<HTMLElementTagNameMap[K], "style"> & {
       style: Partial<CSSStyleDeclaration>;
+      onMount?: (el: HTMLElementTagNameMap[K]) => void;
     }
   > = {},
   ...children: (HTMLElement | string)[]
@@ -22,5 +23,8 @@ export default function el<K extends keyof HTMLElementTagNameMap>(
       el.appendChild(child);
     }
   });
+  if (props.onMount) {
+    props.onMount(el);
+  }
   return el;
 }

@@ -1,32 +1,19 @@
 import el from "./el.ts";
-import GetterSetter from "./getter-setter.ts";
+import { Store } from "./store.ts";
 
-export default function Counter(
-  initVal: number,
-  onChange: (val: number) => void = () => {},
-  min: number,
-  max: number,
-) {
-  const [cur, setCur] = GetterSetter(initVal, (val) => {
-    decButton.disabled = val === min;
-    incButton.disabled = val === max;
-    countText.textContent = String(val);
-    onChange(val);
-  });
-
-  const countText = el(
-    "span",
-    { style: { width: "2rem", textAlign: "center" } },
-    String(initVal),
-  );
-  const decButton = el("button", { onclick: () => setCur(cur() - 1) }, "-");
-  const incButton = el("button", { onclick: () => setCur(cur() + 1) }, "+");
-
+export default function Counter(cur: Store<number>, min: number, max: number) {
   return el(
     "div",
     { style: { display: "flex", gap: ".5rem" } },
-    decButton,
-    countText,
-    incButton,
+    el("button", { onclick: () => cur.set(Math.max(cur.get() - 1, min)) }, "-"),
+    el("span", {
+      style: { width: "2rem", textAlign: "center" },
+      onMount: (el) => {
+        cur.subscribe((newVal) => {
+          el.textContent = String(newVal);
+        });
+      },
+    }),
+    el("button", { onclick: () => cur.set(Math.min(cur.get() + 1, max)) }, "+"),
   );
 }
