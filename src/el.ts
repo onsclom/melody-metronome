@@ -1,9 +1,19 @@
+interface EventHandler<T, E extends Event> {
+  (
+    e: E & {
+      currentTarget: T;
+      target: HTMLElement;
+    },
+  ): void;
+}
+
 export default function el<K extends keyof HTMLElementTagNameMap>(
   type: K,
   // pretty crazy typing huh? but it works!
   props: Partial<
-    Omit<HTMLElementTagNameMap[K], "style"> & {
+    Omit<HTMLElementTagNameMap[K], "style" | "oninput"> & {
       style: Partial<CSSStyleDeclaration>;
+      oninput?: EventHandler<HTMLElementTagNameMap[K], KeyboardEvent>;
       onMount?: (el: HTMLElementTagNameMap[K]) => void;
     }
   > = {},
