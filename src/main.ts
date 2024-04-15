@@ -27,7 +27,7 @@ const notesPerMinSlider = el(
     type: "range",
     style: { flexGrow: "1" },
     oninput: (e) => {
-      notesPerMinute.set(Number((e.target as HTMLInputElement).value));
+      notesPerMinute.set(e.currentTarget.valueAsNumber);
     },
     min: "15",
     max: "180",
