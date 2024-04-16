@@ -18,7 +18,7 @@ const midiStats = createStore({ correct: 0, incorrect: 0 });
 ///////////////
 
 const tabStyle = {
-  borderRadius: "10px 10px 0 0 ",
+  borderRadius: "10px 10px 0 0",
   padding: ".5rem",
   cursor: "pointer",
 };
@@ -159,7 +159,7 @@ const metronome = () =>
         style: {
           padding: "1rem",
           width: "100%",
-          marginTop: "1rem",
+          marginTop: ".5rem",
           cursor: "pointer",
         },
         onclick: onStartStop,
@@ -316,6 +316,9 @@ document.body.appendChild(
     ),
   ),
 );
+
+// LOGIC
+////////////
 
 function onStartStop() {
   const curNoteCleanup = onStopCleanup.get();
