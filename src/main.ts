@@ -6,13 +6,53 @@ import { createStore } from "./store.ts";
 // STATE
 ///////////////
 
+const midiMode = createStore(false);
+const midiDelay = createStore(500);
 const notesPerMinute = createStore(45);
 const maxInterval = createStore(7);
 const onStopCleanup = createStore(null as null | (() => void));
-const midiMode = createStore(false);
 
 // UI
 ///////////////
+
+const midiDelaySlider = el(
+  "label",
+  {
+    style: {
+      display: "flex",
+      gap: ".5rem",
+      alignContent: "center",
+      justifyContent: "center",
+    },
+  },
+  el("input", {
+    type: "range",
+    style: { flexGrow: "1" },
+    oninput: (e) => {
+      midiDelay.set(Number((e.target as HTMLInputElement).value));
+    },
+    min: "0",
+    max: "1000",
+    step: "1",
+    value: midiDelay.get().toString(),
+    onMount: (el) => {
+      midiMode.subscribe((newVal) => {
+        el.disabled = !newVal;
+      });
+    },
+  }),
+  el("span", {
+    onMount: (el) => {
+      midiDelay.subscribe((newVal) => {
+        el.textContent = `${newVal}ms`;
+      });
+    },
+    style: {
+      width: "4rem",
+      textAlign: "center",
+    },
+  }),
+);
 
 const notesPerMinSlider = el(
   "label",
@@ -74,7 +114,6 @@ document.body.appendChild(
         },
       },
       el("legend", {}, "Settings"),
-
       el(
         "label",
         {
@@ -87,8 +126,9 @@ document.body.appendChild(
         el("input", { type: "checkbox" }),
         "MIDI mode",
       ),
-      // have devices select here! why not
-
+      // TODO: have devices select here! why not
+      "Delay after answer",
+      midiDelaySlider,
       "Notes per minute",
       notesPerMinSlider,
       "Max interval (in semitones)",
@@ -142,7 +182,6 @@ function startMidiMode() {
     noteFromNum(i + minNote),
   );
   let lastNoteIndex = 12;
-  let correct = 0;
   setupNewNote(12);
 
   function setupNewNote(startNote?: number) {
@@ -163,14 +202,13 @@ function startMidiMode() {
     const cancelNote = playFreq(note.freq);
 
     onMidiNoteDown = (noteNum) => {
-      console.log(note.num, noteNum);
       if (note.num === noteNum) {
-        setupNewNote();
-        correct++;
-      } else {
-        alert(`Incorrect guess!\nYou got ${correct} correct in a row`);
-        cancelNote();
+        const nextNoteTimeout = setTimeout(setupNewNote, midiDelay.get());
         onMidiNoteDown = () => {};
+        onStopCleanup.set(() => {
+          cancelNote();
+          clearTimeout(nextNoteTimeout);
+        });
       }
     };
 
@@ -186,7 +224,6 @@ function notesPerMinMode() {
   const possibleNotes = Array.from({ length: 24 }, (_, i) =>
     noteFromNum(i + minNote),
   );
-  // first note should be C4
   let lastNoteIndex = 12;
   const note = possibleNotes[lastNoteIndex];
 
@@ -222,17 +259,13 @@ function notesPerMinMode() {
 }
 
 let onMidiNoteDown: (noteNum: number) => void = () => {};
-
 const midiAccess = await navigator.requestMIDIAccess();
-const midiInputs = Array.from(midiAccess.inputs.values());
-// TODO: handle case of multiple MIDI inputs maybe?
-if (midiInputs.length > 0) {
-  const midiInput = midiInputs[0];
-  midiInput.onmidimessage = (e) => {
+midiAccess.inputs.forEach((input) => {
+  input.onmidimessage = (e) => {
     if (!e.data) return;
     const [command, note, velocity] = e.data;
     if (command === 144 && velocity > 0) {
       onMidiNoteDown(note);
     }
   };
-}
+});
