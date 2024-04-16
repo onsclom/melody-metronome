@@ -6,104 +6,137 @@ import { createStore } from "./store.ts";
 // STATE
 ///////////////
 
-const midiMode = createStore(false);
+const tab = createStore("Metronome" as "Metronome" | "MIDI");
 const midiDelay = createStore(500);
 const notesPerMinute = createStore(45);
 const maxInterval = createStore(7);
 const onStopCleanup = createStore(null as null | (() => void));
 
+const midiStats = createStore({ correct: 0, incorrect: 0 });
+
 // UI
 ///////////////
 
-const midiDelaySlider = el(
-  "label",
-  {
-    style: {
-      display: "flex",
-      gap: ".5rem",
-      alignContent: "center",
-      justifyContent: "center",
-    },
-  },
-  el("input", {
-    type: "range",
-    style: { flexGrow: "1" },
-    oninput: (e) => {
-      midiDelay.set(Number((e.target as HTMLInputElement).value));
-    },
-    min: "0",
-    max: "1000",
-    step: "1",
-    value: midiDelay.get().toString(),
-    onMount: (el) => {
-      midiMode.subscribe((newVal) => {
-        el.disabled = !newVal;
-      });
-    },
-  }),
-  el("span", {
-    onMount: (el) => {
-      midiDelay.subscribe((newVal) => {
-        el.textContent = `${newVal}ms`;
-      });
-    },
-    style: {
-      width: "4rem",
-      textAlign: "center",
-    },
-  }),
-);
+const tabStyle = {
+  borderRadius: "10px 10px 0 0 ",
+  padding: ".5rem",
+  cursor: "pointer",
+};
 
-const notesPerMinSlider = el(
-  "label",
-  {
-    style: {
-      display: "flex",
-      gap: ".5rem",
-      alignContent: "center",
-      justifyContent: "center",
-    },
-  },
-  el("input", {
-    type: "range",
-    style: { flexGrow: "1" },
-    oninput: (e) => {
-      notesPerMinute.set(Number((e.target as HTMLInputElement).value));
-    },
-    min: "15",
-    max: "180",
-    step: "1",
-    value: notesPerMinute.get().toString(),
-    onMount: (el) => {
-      midiMode.subscribe((newVal) => {
-        el.disabled = newVal;
-      });
-    },
-  }),
-  el("span", {
-    onMount: (el) => {
-      notesPerMinute.subscribe((newVal) => {
-        el.textContent = String(newVal);
-      });
-    },
-    style: {
-      width: "2rem",
-      textAlign: "center",
-    },
-  }),
-);
-
-document.body.appendChild(
+const tabs = () =>
   el(
-    "main",
+    "div",
+    { style: { display: "flex" } },
+    el(
+      "button",
+      {
+        style: tabStyle,
+        onclick: () => {
+          tab.set("Metronome");
+          onStopCleanup.get()?.();
+          onStopCleanup.set(null);
+        },
+        onMount: (el) => {
+          tab.subscribe((newTab) => {
+            el.disabled = newTab === "Metronome";
+          });
+        },
+      },
+      "Metronome",
+    ),
+    el(
+      "button",
+      {
+        style: tabStyle,
+        onclick: () => {
+          tab.set("MIDI");
+          onStopCleanup.get()?.();
+          onStopCleanup.set(null);
+        },
+        onMount: (el) => {
+          tab.subscribe((newTab) => {
+            el.disabled = newTab === "MIDI";
+          });
+        },
+      },
+      "MIDI",
+    ),
+  );
+
+const midiDelaySlider = () =>
+  el(
+    "label",
     {
       style: {
-        maxWidth: "30rem",
-        margin: "auto",
-        padding: "1rem",
+        display: "flex",
+        gap: ".5rem",
+        alignContent: "center",
+        justifyContent: "center",
       },
     },
-    el("h1", {}, "Melody Metronome"),
+    el("input", {
+      type: "range",
+      style: { flexGrow: "1" },
+      oninput: (e) => {
+        midiDelay.set(Number((e.target as HTMLInputElement).value));
+      },
+      min: "0",
+      max: "1000",
+      step: "1",
+      value: midiDelay.get().toString(),
+    }),
+    el("span", {
+      onMount: (el) => {
+        midiDelay.subscribe((newVal) => {
+          el.textContent = `${newVal}ms`;
+        });
+      },
+      style: {
+        width: "4rem",
+        textAlign: "center",
+      },
+    }),
+  );
+
+const notesPerMinSlider = () =>
+  el(
+    "label",
+    {
+      style: {
+        display: "flex",
+        gap: ".5rem",
+        alignContent: "center",
+        justifyContent: "center",
+      },
+    },
+    el("input", {
+      type: "range",
+      style: { flexGrow: "1" },
+      oninput: (e) => {
+        notesPerMinute.set(Number((e.target as HTMLInputElement).value));
+      },
+      min: "15",
+      max: "180",
+      step: "1",
+      value: notesPerMinute.get().toString(),
+    }),
+    el("span", {
+      onMount: (el) => {
+        notesPerMinute.subscribe((newVal) => {
+          el.textContent = String(newVal);
+        });
+      },
+      style: {
+        width: "2rem",
+        textAlign: "center",
+      },
+    }),
+  );
+
+const metronome = () =>
+  el(
+    "div",
+    {},
     el(
       "fieldset",
       {
@@ -114,23 +147,9 @@ document.body.appendChild(
         },
       },
       el("legend", {}, "Settings"),
-      el(
-        "label",
-        {
-          style: { display: "flex", gap: ".5rem", alignItems: "center" },
-          // on input, set midiMode to the checked value
-          oninput: (e) => {
-            midiMode.set((e.target as HTMLInputElement).checked);
-          },
-        },
-        el("input", { type: "checkbox" }),
-        "MIDI mode",
-      ),
       // TODO: have devices select here! why not
-      "Delay after answer",
-      midiDelaySlider,
       "Notes per minute",
-      notesPerMinSlider,
+      notesPerMinSlider(),
       "Max interval (in semitones)",
       Counter(maxInterval, 1, 20),
     ),
@@ -158,14 +177,150 @@ document.body.appendChild(
       { style: { display: "block" } },
       "First note is always c4. Notes stay between c3 and c5.",
     ),
+  );
+
+const midi = () => {
+  const correctDiv = el("div", {
+    onMount: (el) => {
+      midiStats.subscribe((newVal) => {
+        el.textContent = `Correct: ${newVal.correct}`;
+      });
+    },
+    style: { color: "green", display: "inline-block" },
+  });
+  const incorrectDiv = el("div", {
+    onMount: (el) => {
+      midiStats.subscribe((newVal) => {
+        el.textContent = `Incorrect: ${newVal.incorrect}`;
+      });
+    },
+    style: { color: "red", display: "inline-block" },
+  });
+
+  let lastStats = { ...midiStats.get() };
+  const animation = [
+    { transform: "scale(1)" },
+    { transform: "scale(1.2)" },
+    { transform: "scale(1)" },
+  ];
+  midiStats.subscribe((newStats) => {
+    if (newStats.correct > lastStats.correct) {
+      correctDiv.animate(animation, { duration: 500 });
+    } else if (newStats.incorrect > lastStats.incorrect) {
+      incorrectDiv.animate(animation, { duration: 500 });
+    }
+    lastStats = { ...newStats };
+  });
+
+  return el(
+    "div",
+    {},
+    el(
+      "fieldset",
+      {
+        onMount: (el) => {
+          onStopCleanup.subscribe((cleanup) => {
+            el.disabled = cleanup !== null;
+          });
+        },
+      },
+      el("legend", {}, "Settings"),
+      // TODO: have devices select here! why not
+      "Delay after answer",
+      midiDelaySlider(),
+      "Max interval (in semitones)",
+      Counter(maxInterval, 1, 20),
+    ),
+    el(
+      "button",
+      {
+        style: {
+          padding: "1rem",
+          width: "100%",
+          marginTop: "1rem",
+          cursor: "pointer",
+        },
+        onclick: onStartStop,
+        onMount: (el) => {
+          onStopCleanup.subscribe((cleanup) => {
+            el.textContent = cleanup === null ? "Start" : "Stop";
+            el.style.backgroundColor = cleanup === null ? "#cfc" : "#fcc";
+          });
+        },
+      },
+      "start",
+    ),
+    el(
+      "small",
+      { style: { display: "block" } },
+      "First note is always c4. Notes stay between c3 and c5.",
+    ),
+    el(
+      "fieldset",
+      {
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+        },
+      },
+      el("legend", {}, "Stats"),
+      correctDiv,
+      incorrectDiv,
+      el(
+        "button",
+        {
+          onclick: () => {
+            midiStats.set({ correct: 0, incorrect: 0 });
+          },
+        },
+        "Reset",
+      ),
+    ),
+  );
+};
+
+document.body.appendChild(
+  el(
+    "main",
+    {
+      style: {
+        maxWidth: "30rem",
+        margin: "auto",
+        padding: "1rem",
+      },
+    },
+    el("h1", { style: { marginBottom: "1rem" } }, "Melody Metronome"),
+    tabs(),
+    el(
+      "div",
+      {
+        onMount: (el) => {
+          tab.subscribe((newTab) => {
+            el.style.display = newTab === "Metronome" ? "block" : "none";
+          });
+        },
+      },
+      metronome(),
+    ),
+    el(
+      "div",
+      {
+        onMount: (el) => {
+          tab.subscribe((newTab) => {
+            el.style.display = newTab === "MIDI" ? "block" : "none";
+          });
+        },
+      },
+      midi(),
+    ),
   ),
 );
 
 function onStartStop() {
   const curNoteCleanup = onStopCleanup.get();
-
   if (curNoteCleanup === null) {
-    if (midiMode.get()) {
+    if (tab.get() === "MIDI") {
       startMidiMode();
     } else {
       notesPerMinMode();
@@ -201,14 +356,28 @@ function startMidiMode() {
     const note = possibleNotes[newNoteIndex];
     const cancelNote = playFreq(note.freq);
 
+    let firstTry = true;
     onMidiNoteDown = (noteNum) => {
       if (note.num === noteNum) {
+        if (firstTry)
+          midiStats.set({
+            ...midiStats.get(),
+            correct: midiStats.get().correct + 1,
+          });
         const nextNoteTimeout = setTimeout(setupNewNote, midiDelay.get());
         onMidiNoteDown = () => {};
         onStopCleanup.set(() => {
           cancelNote();
           clearTimeout(nextNoteTimeout);
         });
+      } else {
+        if (firstTry) {
+          firstTry = false;
+          midiStats.set({
+            ...midiStats.get(),
+            incorrect: midiStats.get().incorrect + 1,
+          });
+        }
       }
     };
 
