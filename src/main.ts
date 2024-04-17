@@ -419,37 +419,32 @@ function notesPerMinMode() {
     noteFromNum(i + minNote),
   );
   let lastNoteIndex = 12;
-  const note = possibleNotes[lastNoteIndex];
 
-  const cancelNote = playFreq(note.freq);
-  const noteTimeout = scheduleNextNote();
-  onStopCleanup.set(() => {
-    cancelNote();
-    clearTimeout(noteTimeout);
-  });
+  function playNote(first: boolean) {
+    if (!first) {
+      let newNoteIndex = Math.floor(Math.random() * possibleNotes.length);
+      while (
+        Math.abs(newNoteIndex - lastNoteIndex) > maxInterval.get() ||
+        newNoteIndex === lastNoteIndex
+      ) {
+        newNoteIndex = Math.floor(Math.random() * possibleNotes.length);
+      }
+      lastNoteIndex = newNoteIndex;
+    }
 
-  function scheduleNextNote() {
-    return setTimeout(
-      () => {
-        let newNoteIndex = Math.floor(Math.random() * possibleNotes.length);
-        while (
-          Math.abs(newNoteIndex - lastNoteIndex) > maxInterval.get() ||
-          newNoteIndex === lastNoteIndex
-        ) {
-          newNoteIndex = Math.floor(Math.random() * possibleNotes.length);
-        }
-        lastNoteIndex = newNoteIndex;
-        const note = possibleNotes[newNoteIndex];
-        const cancelNote = playFreq(note.freq);
-        const noteTimeout = scheduleNextNote();
-        onStopCleanup.set(() => {
-          clearTimeout(noteTimeout);
-          cancelNote();
-        });
-      },
-      (1000 * 60) / notesPerMinute.get(),
-    );
+    const note = possibleNotes[lastNoteIndex];
+    const cancelNote = playFreq(note.freq);
+    onStopCleanup.set(() => {
+      clearInterval(noteInterval);
+      cancelNote();
+    });
   }
+
+  playNote(true);
+  const noteInterval = setInterval(
+    () => playNote(false),
+    (1000 * 60) / notesPerMinute.get(),
+  );
 }
 
 let onMidiNoteDown: (noteNum: number) => void = () => {};
