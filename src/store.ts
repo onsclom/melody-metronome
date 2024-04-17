@@ -2,7 +2,6 @@ export type Store<T> = {
   get: () => T;
   set: (newState: T) => void;
   subscribe: (listener: (state: T) => void) => () => void;
-  // TODO: maybe i'll want a `listen` that doesn't call the listener immediately
 };
 
 export function createStore<T>(initialState: T): Store<T> {

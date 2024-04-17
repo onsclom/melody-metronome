@@ -16,11 +16,11 @@ features:
 - show notes in a staff?
 
 ^ old notes above, now i changed the app entirely
+maybe i'll add this back in as new tab?
 
 features:
 
 - preset buttons for "novice", "intermediate", "advanced"
-  X speed in BPM
 - show visualization of tempo
 - explore other sounds?
 - control range of notes
@@ -35,3 +35,10 @@ show off:
   - demo it and give some tips on using it
 - maybe other musicians would be interested in this?
 - the pitch: "i wanted to practice my ear training, and couldn't find a tool that worked the way i wanted, so i made my own! i think it could be useful for other musicians too, so i put it on the web for others to use too! totally free, no ads."
+
+todo:
+
+- make each interval a checkbox and/or dual range slider
+  - basically, i want more customization
+- add melody tab (the OG idea)
+- allow playing output from MIDI!
