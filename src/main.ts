@@ -365,10 +365,8 @@ function startMidiMode() {
   setupNewNote(12);
 
   function setupNewNote(startNote?: number) {
-    let newNoteIndex = Math.floor(Math.random() * possibleNotes.length);
-    if (startNote) {
-      newNoteIndex = startNote;
-    } else {
+    if (!startNote) {
+      let newNoteIndex = Math.random() * possibleNotes.length;
       while (
         Math.abs(newNoteIndex - lastNoteIndex) > maxInterval.get() ||
         newNoteIndex === lastNoteIndex
@@ -378,7 +376,7 @@ function startMidiMode() {
       lastNoteIndex = newNoteIndex;
     }
 
-    const note = possibleNotes[newNoteIndex];
+    const note = possibleNotes[lastNoteIndex];
     const cancelNote = playFreq(note.freq);
 
     let firstTry = true;
