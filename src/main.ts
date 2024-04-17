@@ -1,5 +1,4 @@
 import el from "./el.ts";
-import Counter from "./counter.ts";
 import { noteFromNum, playFreq } from "./music.ts";
 import { createStore } from "./store.ts";
 
@@ -9,7 +8,9 @@ import { createStore } from "./store.ts";
 const tab = createStore("Metronome" as "Metronome" | "MIDI");
 const midiDelay = createStore(500);
 const notesPerMinute = createStore(45);
-const maxInterval = createStore(7);
+const intervalsSelected = createStore(
+  new Set("1234567".split("").map((l) => +l)),
+);
 const onStopCleanup = createStore(null as null | (() => void));
 const midiStats = createStore({ correct: 0, incorrect: 0 });
 const midiDevicesConnected = createStore(0);
@@ -69,7 +70,7 @@ const midiDelaySlider = () =>
     {
       style: {
         display: "flex",
-        gap: ".5rem",
+        // gap: ".5rem",
         alignContent: "center",
         justifyContent: "center",
       },
@@ -133,6 +134,39 @@ const notesPerMinSlider = () =>
     }),
   );
 
+const allowedIntervals = () =>
+  el(
+    "div",
+    { style: { display: "flex", flexWrap: "wrap" } },
+    ...Array.from({ length: 15 }, (_, i) => {
+      return el(
+        "label",
+        {
+          style: { whiteSpace: "nowrap", padding: ".5rem" },
+        },
+        el("input", {
+          type: "checkbox",
+          checked: true,
+          onchange: (e) => {
+            const newSet = new Set(intervalsSelected.get());
+            if ((e.target as HTMLInputElement).checked) {
+              newSet.add(i);
+            } else {
+              newSet.delete(i);
+            }
+            intervalsSelected.set(newSet);
+          },
+          onMount: (el) => {
+            intervalsSelected.subscribe((selected) => {
+              el.checked = selected.has(i);
+            });
+          },
+        }),
+        ` ${i}`,
+      );
+    }),
+  );
+
 const metronome = () =>
   el(
     "div",
@@ -149,8 +183,11 @@ const metronome = () =>
       el("legend", {}, "Settings"),
       "Notes per minute",
       notesPerMinSlider(),
-      "Max interval (in semitones)",
-      Counter(maxInterval, 1, 20),
+      "Allowed intervals (in semi-tones)",
+      allowedIntervals(),
+
+      // checkbox for each interval
+      el("div", { style: { display: "flex", gap: ".5rem" } }),
     ),
     el(
       "small",
@@ -171,6 +208,9 @@ const metronome = () =>
           onStopCleanup.subscribe((cleanup) => {
             el.textContent = cleanup === null ? "Start" : "Stop";
             el.style.backgroundColor = cleanup === null ? "#cfc" : "#fcc";
+          });
+          intervalsSelected.subscribe((selected) => {
+            el.disabled = selected.size === 0;
           });
         },
       },
@@ -205,8 +245,8 @@ const midi = () =>
       el("legend", {}, "Settings"),
       "Delay after answer",
       midiDelaySlider(),
-      "Max interval (in semitones)",
-      Counter(maxInterval, 1, 20),
+      "Allowed intervals (in semi-tones)",
+      allowedIntervals(),
     ),
     el(
       "small",
@@ -228,6 +268,9 @@ const midi = () =>
             el.textContent = cleanup === null ? "Start" : "Stop";
             el.style.backgroundColor = cleanup === null ? "#cfc" : "#fcc";
           });
+          intervalsSelected.subscribe((selected) => {
+            el.disabled = selected.size === 0;
+          });
         },
       },
       "start",
@@ -242,11 +285,9 @@ const midi = () =>
         },
       },
       el("legend", {}, "Stats"),
-      // correctDiv,
-      // incorrectDiv,
       el(
         "table",
-        {},
+        { style: { width: "100%", textAlign: "center", tableLayout: "fixed" } },
         el(
           "thead",
           {},
@@ -290,15 +331,16 @@ const midi = () =>
           ),
         ),
       ),
-      el(
-        "button",
-        {
-          onclick: () => {
-            midiStats.set({ correct: 0, incorrect: 0 });
-          },
+    ),
+    el(
+      "button",
+      {
+        onclick: () => {
+          midiStats.set({ correct: 0, incorrect: 0 });
         },
-        "Reset",
-      ),
+        style: { marginTop: ".5rem", cursor: "pointer" },
+      },
+      "Reset stats",
     ),
   );
 
@@ -368,8 +410,7 @@ function startMidiMode() {
     if (!startNote) {
       let newNoteIndex = Math.random() * possibleNotes.length;
       while (
-        Math.abs(newNoteIndex - lastNoteIndex) > maxInterval.get() ||
-        newNoteIndex === lastNoteIndex
+        !intervalsSelected.get().has(Math.abs(newNoteIndex - lastNoteIndex))
       ) {
         newNoteIndex = Math.floor(Math.random() * possibleNotes.length);
       }
@@ -422,10 +463,9 @@ function notesPerMinMode() {
     if (!first) {
       let newNoteIndex = Math.floor(Math.random() * possibleNotes.length);
       while (
-        Math.abs(newNoteIndex - lastNoteIndex) > maxInterval.get() ||
-        newNoteIndex === lastNoteIndex
+        !intervalsSelected.get().has(Math.abs(newNoteIndex - lastNoteIndex))
       ) {
-        newNoteIndex = Math.floor(Math.random() * possibleNotes.length);
+        newNoteIndex = Math.floor(Math.random() * 25);
       }
       lastNoteIndex = newNoteIndex;
     }

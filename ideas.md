@@ -42,3 +42,4 @@ todo:
   - basically, i want more customization
 - add melody tab (the OG idea)
 - allow playing output from MIDI!
+- add local storage for settings/state
